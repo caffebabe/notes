@@ -1,0 +1,13 @@
+{
+    "python.pythonPath": "D:\\Program Files\\python\\python.exe",
+    "python.linting.flake8Enabled": true,
+    "python.linting.enabled": true,
+    "python.languageServer": "Pylance",
+    "python.formatting.provider": "black",
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintPath": "flake8",
+    "editor.formatOnSave": true,
+    "python.linting.flake8Args": [
+        "--max-line-length=120"
+    ]
+}
