@@ -1,4 +1,4 @@
-## 快速开始
+# APISIX快速开始
 
 Cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.
 
@@ -6,7 +6,7 @@ Apache APISIX is based on Nginx and etcd. Compared with traditional API gateways
 
 ![apisix-arc](/assets/apisix-arc.png)
 
-### 安装
+## 安装
 
 ```sh
 # Download the Docker image of Apache APISIX
@@ -45,7 +45,7 @@ docker logs -f
 docker exec -it 容器ID bash
 ```
 
-### 创建一个路由
+## 创建一个路由
 
 We can create a Route and connect it to an Upstream service(also known as the Upstream). When a Request arrives at Apache APISIX, Apache APISIX knows which Upstream the request should be forwarded to.
 
@@ -78,3 +78,61 @@ curl -i -X GET "http://{APISIX_BASE_URL}/services/users/getAll?limit=10" -H "Hos
 ```
 
 This will be forwarded to <http://httpbin.org:80/services/users/getAll?limit=10> by Apache APISIX.
+
+**创建一个 upstream:**
+
+An Upstream can be created by simply executing the following command:
+
+```sh
+curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+  "type": "roundrobin",
+  "nodes": {
+    "httpbin.org:80": 1
+  }
+}'
+
+```
+
+**绑定路由到upstream:**
+
+```sh
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+  "uri": "/get",
+  "host": "httpbin.org",
+  "upstream_id": "1"
+}'
+```
+
+**验证：**
+
+```sh
+curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 370
+Connection: keep-alive
+Date: Thu, 26 Aug 2021 03:29:48 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Server: APISIX/2.6
+
+{
+  "args": {
+    "foo1": "bar1",
+    "foo2": "bar2"
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    "User-Agent": "curl/7.68.0",
+    "X-Amzn-Trace-Id": "Root=1-61270aac-7689df6b2ecdeec66033afe4",
+    "X-Forwarded-Host": "httpbin.org"
+  },
+  "origin": "172.18.0.1, 120.203.73.194",
+  "url": "http://httpbin.org/get?foo1=bar1&foo2=bar2"
+}
+
+```
