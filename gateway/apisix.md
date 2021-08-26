@@ -136,3 +136,67 @@ Server: APISIX/2.6
 }
 
 ```
+
+### 认证
+
+Now we want only a specific user John to have access to this Upstream service, and we need to use Consumer and Plugin to implement authentication.
+
+First, let's use **key-auth plugin** to create a Consumer John, we need to provide a specified key.
+
+```sh
+curl "http://127.0.0.1:9080/apisix/admin/consumers" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+  "username": "john",
+  "plugins": {
+    "key-auth": {
+      "key": "key-of-john"
+    }
+  }
+}'
+```
+
+Next, let's bind consumer (John) to the route, we just need to enable the key-auth plugin.
+
+```sh
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+  "uri": "/get",
+  "host": "httpbin.org",
+  "plugins": {
+    "key-auth": {}
+  },
+  "upstream_id": "1"
+}'
+```
+
+Now when we access the route created in step 2, an Unauthorized Error will be triggered.
+
+The correct way to access that route is to add a Header named apikey with the correct key, as shown in the code below:
+
+```sh
+curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "apikey: key-of-john"
+```
+
+### 前缀路由
+
+Now, suppose you want to add a prefix to a route (e.g. samplePrefix) and don't want to use the host header, then you can use the proxy-rewrite plugin to do so.
+
+```sh
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+  "uri": "/samplePrefix/get",
+  "plugins": {
+    "proxy-rewrite": {
+      "regex_uri": ["^/samplePrefix/get(.*)", "/get$1"]
+    },
+    "key-auth": {}
+  },
+  "upstream_id": "1"
+}'
+```
+
+You can now use the following command to invoke the route:
+
+```sh
+curl -i -X GET "http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar" -H "apikey: key-of-john"
+```
